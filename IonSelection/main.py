@@ -61,6 +61,7 @@ if ion == "OH":
             cl.printClusterHydroxide(waterHydrogen, waterOxygen, hydroxideOxygen, hydroxideHydrogen, cluster, itr)
             itr = itr + 1
 
+#### find if ion is a proton ####
 elif ion == "H":
 
     for cluster in range(age, maxFrame):
@@ -77,6 +78,7 @@ elif ion == "H":
             cl.printClusterHydroxide(waterHydrogen, waterOxygen, protonHydrogen, cluster, itr)
             itr = itr + 1
 
+### If ion is a halide ###
 elif ion == "F" or ion == "Cl" or ion == "Br" or ion == "I":
     print("Hello")
     for cluster in range(age, maxFrame):
