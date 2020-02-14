@@ -6,7 +6,7 @@ of solvation free energies using quasi-chemical theory.
 # How do I use it?
 
 First, verify that you have the following dependencies installed
-(in order of increasing diffulty):
+(in order of increasing difficulty):
 
 * Linux-like environment with bash
 * python 3 with numpy
