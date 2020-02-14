@@ -20,12 +20,16 @@ ion = str(args.ion)
 cp2k = args.file
 age = args.age
 
+##### If the ion a halide then add this to the pattern search cp2k trajectory ######
+
 if ion != "OH" and ion != "H":
     cp2K_search = str("(?:i |H|O|" + ion + ")")
 
+####### If ion is proton or hydroxide then trajectory search is just oxygen and hydrogen ######
 else:
     cp2K_search = "(?:i |H|O)"
 
+#### Send pattern to data read in in atom.py and return them as a pandas dataframe###
 pattern = re.compile(cp2K_search)
 dataFrameList = atom.dataIn(cp2k, pattern)
 maxFrame = dataFrameList[1]
@@ -38,12 +42,13 @@ if age == "Y":
 else:
     age = 0
 
+##### find if ion is hydroxide #####
 if ion == "OH":
 
     for cluster in range(age, maxFrame):
 
         pdFrame_0 = pdFrames.loc[cluster:((clusterSize - 1) + cluster), :]
-
+        #### Get cluster infromation for specific data frame #####
         clusterMe = cl.clusterHydroxide(pdFrame_0, clusterSize, clusterLength)
         clusterBool = clusterMe[0]
         waterHydrogen = clusterMe[1]
@@ -52,7 +57,7 @@ if ion == "OH":
         hydroxideHydrogen = clusterMe[4]
 
         if clusterBool:
-
+            ## If it is a cluster print the configurations ##
             cl.printClusterHydroxide(waterHydrogen, waterOxygen, hydroxideOxygen, hydroxideHydrogen, cluster, itr)
             itr = itr + 1
 
@@ -90,6 +95,7 @@ elif ion == "F" or ion == "Cl" or ion == "Br" or ion == "I":
 
 else:
     print("Ion not available")
+
 
 print("Number of time steps: " + str(maxFrame - age))
 print("Number of time steps clustered: " + str(itr - 1))
