@@ -1,5 +1,7 @@
 import re
 
+###### Defining atoms ######
+# All atoms will have a time step, i, part of a cluster energy, ener, and position <x, y, z>
 class atom:
     def __init__(self,i,ener,type,x,y,z):
         self.i = i
@@ -24,6 +26,8 @@ class atom:
                 + "\t" +  str(self.z))
 
 
+# Reading data in
+# This is a little hacky
 def dataIn(cp2k, pattern):
     with open(cp2k) as file_in:
         maxFrame = 0
@@ -53,30 +57,3 @@ def dataIn(cp2k, pattern):
                         maxFrame = frame.i
 
         return [dataFrameList, maxFrame, clusterSize]
-
-    # with open(cp2K) as file_in:
-    #     lines = []
-    #     frame = atom.atom(0, 0, "NULL", 0, 0, 0)
-    #     for line in file_in:
-    #         for m in re.finditer(pattern, line):
-    #             lines = line.split('\t')
-    #             if re.search(r'i =', lines[0]):
-    #                 temp = lines[0].split('=')
-    #                 i = int(temp[1].split(',')[0])
-    #                 ener = float(temp[3].split(',')[0])
-    #                 clusterSize = 0
-    #             else:
-    #                 clusterSize = clusterSize + 1
-    #                 temp = lines[0].split(" ")
-    #                 temp = list(filter(None, temp))
-    #                 frame.i = i
-    #                 frame.ener = ener
-    #                 frame.type = temp[0]
-    #                 frame.x = float(temp[1])
-    #                 frame.y = float(temp[2])
-    #                 frame.z = float(temp[3])
-    #                 appFrame = atom.atom(frame.i, frame.ener, frame.type, frame.x, frame.y, frame.z)
-    #                 dataFrameList.append(appFrame)
-    #                 if frame.i > maxFrame:
-    #                     maxFrame = frame.i
-    #
