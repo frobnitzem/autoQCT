@@ -47,7 +47,7 @@ def isHydroxide(atomH, atomO):
 # Do clusters fit the clustering criteria radius to water hydrogen atoms
 def isClustered(ionX, waterH, clusterLength):
 
-    boolVar =[]
+    boolVar =[True]
     for waterPair in waterH:
 
         if bondLength(ionX, waterPair[0]) <= clusterLength or bondLength(ionX, waterPair[1]) <= clusterLength:

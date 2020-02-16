@@ -1,6 +1,5 @@
 import itertools
 from functools import reduce
-import molecule as mo
 import os
 import string
 
