@@ -1,9 +1,11 @@
 import re
 import pandas as pd
-import atom as atom
-import cluster as cl
 import argparse
 import math
+import atom as atom
+import molecule as mo
+import cluster as cl
+
 
 
 ########## COMMANDLINE ARGUMENT PASSING #########

@@ -2,6 +2,7 @@ import itertools
 from functools import reduce
 import os
 import string
+import molecule as mo
 
 
 def clusterHydroxide(pdFrame, clusterSize, clusterLength):
