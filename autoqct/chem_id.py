@@ -1,3 +1,6 @@
+# Tools for running combinatorial search through a group
+# of atoms in order to identify the included molecules.
+
 import itertools
 from functools import reduce
 import os

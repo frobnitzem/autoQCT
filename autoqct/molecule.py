@@ -29,6 +29,9 @@ class Mol:
         assert x.shape[1] == 3
         assert len(x.shape) == 2
 
+    def copy(self):
+        return Mol(self.names, self.x.copy(), self.charge, self.spin)
+
     def name_iter(self): # return an iterator through all atom names
         return self.names
 
@@ -40,22 +43,23 @@ class Mol:
     def tot_spin(self):
         return self.spin
 
-class Sys:
+class Sys(list):
     """ A list of molecules. """
 
-    def __init__(self, mols):
-        self.mols = mols
+    def __init__(self, mols=[]):
+        list.__init__(self, mols)
+
     def name_iter(self):
-        for m in self.mols:
+        for m in self:
             for a in m.name_iter():
                 yield a
     def x_iter(self):
-        for m in self.mols:
+        for m in self:
             for x in m.x_iter():
                 yield x
 
     def tot_charge(self):
-        return sum(m.tot_charge() for m in self.mols)
+        return sum(m.tot_charge() for m in self)
     def tot_spin(self):
-        return sum(m.tot_spin()-1 for m in self.mols)+1
+        return sum(m.tot_spin()-1 for m in self)+1
 
