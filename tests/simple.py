@@ -1,10 +1,11 @@
 import unittest
 from autoqct import *
-from numpy import identity
+import numpy as np
 
 class TestSlurm(unittest.TestCase):
     def setUp(self):
-        self.wat = Mol(["O", "H", "H"], identity(3), 0, 1)
+        self.wat = Mol(["O", "H", "H"], np.identity(3), 0, 1)
+        self.cl  = Mol(["Cl"], np.zeros((1,3)), -1)
 
     def test_molecule(self):
         self.assertEqual(0, self.wat.tot_charge(), "Incorrect Mol.tot_charge()")
@@ -19,7 +20,13 @@ class TestSlurm(unittest.TestCase):
 
     # failing
     def test_io(self):
-        x = read_xdr("tests/Fluoride.xtc")
+        topol = [
+            [(6,), self.cl],
+            [(0,2,3), self.wat],
+            [(1,4,5), self.wat]
+        ]
+        x = read_cp2k("examples/chloride/cp2k_cluster.xyz", topol)
+        self.assertEqual(701, len(x))
 
 if __name__ == '__main__':
     unittest.main()

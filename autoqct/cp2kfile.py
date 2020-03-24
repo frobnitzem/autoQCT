@@ -40,10 +40,9 @@ def read_cp2k(cp2k, topol):
     #    topol = [ ((2,1,0), Mol(["O", "H", "H"], np.zeros(3,3), 0, 1)),
     #              ((3, 4), Mol(["O", "O"], np.zeros((2,3)), 0, 3)) ]
 
-    file_in = open(cp2k)
-
     dataFrameList = []
-    for line in file_in:
+    with open(cp2k) as file_in:
+      for line in file_in:
         # start new frame
         m = header.match(line)
         if m:
