@@ -5,12 +5,16 @@ of solvation free energies using quasi-chemical theory.
 
 # Quasi-Chemical Theory
 
-QCT treats the ion-waters as a molecular species of the system under analysis, then provides a concise format,
+QCT treats each ion-plus-n-water cluster as a molecular species of the system under analysis, then provides a concise format,
 
 ![equation](https://latex.codecogs.com/gif.latex?\mu_{X^-}^{(ex)}&space;=&space;-&space;RT&space;\ln&space;K_n^{(0)}&space;&plus;&space;\rho_{\mathrm{H}_2\mathrm{O}}^{~~~~n}&space;&plus;&space;RT&space;\ln&space;p_{X^-}(n)&space;&plus;&space;\left\(\mu_{(\mathrm{H}_2\mathrm{O})_n}^{(ex)}&space;-&space;n&space;\mu_{\mathrm{H}_2\mathrm{O}}^{(ex)}&space;\right&space;\))
 
-for free energies of solution components X. The populations of clusters are established by applying a clustering 
-algorithm, according to which proximal ligands of a specific ion are defined as *inner-shell* partners of that ion. 
+for the solvation free energy of the ion, X-, based on a Born-Haber cycle for solvating its n-water hydrate.
+This requires estimating the solvation free energy of the hydrate, as well
+as the probability that the probability that X- is surrounded by n waters
+in solution.  The upshot is that that the chemical contribution of
+forming the cluster itself can be computed using high-level quantum
+mechanical calculations in gas phase.
 
 ## Prerequisites
 
@@ -24,8 +28,8 @@ You are free to define what exactly is meant
 (spatially) by a cluster
 geometry that possesses the "inner-shell" property.
 
-We use the definitions of "an inner-shell cluster
-is one where all ligands of X are inner-shell", and, further,
+We define "an inner-shell cluster
+as one where all ligands of X are inner-shell", and, further,
 "a water is inner-shell if it has an H atom within a distance
 of λ from any atom in X."
 This is a natural answer for anions, where the variety
@@ -46,15 +50,21 @@ These configurations go through a molecule deletion scheme to evaluate the free 
 
 ![equation](https://latex.codecogs.com/gif.latex?\Delta&space;U&space;=&space;E(\gamma_n\sigma)&space;-&space;E(\gamma_{n-1}\sigma)&space;-&space;E(\gamma&space;\sigma)&space;&plus;&space;E(\sigma))
 
-so that,
+so that the formation energy of the n-water hydrate can be determined
+by sequential water additions,
 
 ![equation](https://latex.codecogs.com/gif.latex?n&space;K_n^{(0)}&space;=&space;\frac{K_1^{(0)}K_{n-1}^{(0)}}{\langle&space;e^{\beta\Delta&space;U}\rangle}_n)
 
 Where γ denote water ligands and σ is the ion of interest.
+This naturally requires an estimate of K(n-1).  That quantity
+can be calculated by using the rigid-rotor harmonic oscillator (RRHO)
+approximation or from water addition to K(n-2).
+Plotting these two estimates as a function of n shows when the
+RRHO approximation has converged.
 
 ## Operation
 
-The process can be run by writing a python script that
+This set of scripts is run from your own python script that
 imports the autoqct package.  You describe your
 calculation's input parameters (like your soute/solvent's
 definition of inner-shell-ness) using a class
@@ -72,12 +82,14 @@ Internally, the state proceeds through three steps:
 
   2. Job-script creation (script target)
 
-    This will create 2^n sub-directories (n is the number
-    of solvent molecules) for (n choose 0) full configurations,
-    (n choose 1) configurations missing 1 solvent, (n choose 2)
-    configurations missing 2 solvents, and so-on.
+    This will create (frames)*(n+1) sub-directories: one for each
+    trajectory frame - with all n waters and all-but-one water.
     It will also create an example launch script to
     submit all jobs *en bloc*.
+
+    It will also create four sub-directories to launch
+    energy minimization jobs for water, ion, n-water ion,
+    and n-1-water ion complexes.
 
   3. Output validation (output target)
 

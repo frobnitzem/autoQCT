@@ -19,7 +19,9 @@ class QCT:
         print("First frame has %d molecules:"%(len(self.trj[0].sys)))
         print()
         # debug only
-        print(mk_com(self.trj[0].sys, 'Trogdor', 16, '#burninate'))
+        name = self.__class__.__name__
+
+        print(mk_com(self.trj[0].sys, '%s_N1'%name, 4, '#P B3LYP/cc-pVDZ OPT FREQ NOSYMMETRY'))
         return True
 
 def autoQCT(Q, target='valid'):
