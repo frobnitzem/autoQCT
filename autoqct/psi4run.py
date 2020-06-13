@@ -28,9 +28,9 @@ class Psi4Run:
             self.err = e.returncode
             self.out = e.output
 
-    def energies(self):
+    def scrape(self, regex):
         attr = {}
-        expr = re.compile(r'\s*(.*)\sEnergy\s*=\s*(.*)')
+        expr = re.compile(regex)
         fexpr = re.compile(r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?')
         with open(self.dirname / "output.dat") as f:
             for line in f:

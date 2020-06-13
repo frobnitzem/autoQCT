@@ -35,7 +35,7 @@ pcm = {{
     }}
 }}
 
-energy = energy('b3lyp')
+energy = energy('{theory}')
 """
 
 # Example output section:
@@ -62,11 +62,12 @@ energy = energy('b3lyp')
    }
 """
 
-def run_pcm(crds, charge, spin, basis):
-    p = Psi4Run(pcm_in.format(crds=crds, charge=charge, spin=spin, basis=basis))
+def run_pcm(crds, charge, spin, theory, basis):
+    p = Psi4Run(pcm_in.format(crds=crds, charge=charge,
+                              spin=spin, theory=theory, basis=basis))
     p.run()
     if p.err is None:
-        print(p.energies())
+        print(p.scrape(r'\s*(.*)\sEnergy\s*=\s*(.*)'))
     else:
         print("Error running psi4")
 
@@ -75,6 +76,6 @@ def test_run():
                 "O  0.000 0.000 0.000",
                 "H  0.803 0.000 0.596",
                 "H -0.803 0.000 0.596"])
-    run_pcm(crds, charge=0, spin=1, basis="cc-pVDZ")
+    run_pcm(crds, charge=0, spin=1, theory='b3lyp', basis="cc-pVDZ")
 
 #test_run()
