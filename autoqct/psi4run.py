@@ -18,7 +18,7 @@ class Psi4Run:
             #self.out = check_output(["cat input.dat"],
             #             stderr=STDOUT, shell=True,
             #             cwd=str(self.dirname))
-            self.out = check_output(["psi4"],
+            self.out = check_output(["psi4"], #, "-n", "18"],
                          stderr=STDOUT,
                          cwd=str(self.dirname))
             #print(self.out)

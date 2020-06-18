@@ -1,12 +1,11 @@
 from psi4run import Psi4Run
+from molecule import *
 
 # Input template
 pcm_in = """#! pcm
 
 molecule mol {{
-{charge} {spin}
-symmetry c1
-{crds}
+{sys}
 units angstrom
 no_reorient
 no_com
@@ -62,20 +61,24 @@ energy = energy('{theory}')
    }
 """
 
-def run_pcm(crds, charge, spin, theory, basis):
-    p = Psi4Run(pcm_in.format(crds=crds, charge=charge,
-                              spin=spin, theory=theory, basis=basis))
+def run_pcm(sys, crds, theory, basis):
+    p = Psi4Run(pcm_in.format(sys=sys.fmt_psi4(crds, False),
+                              theory=theory, basis=basis))
     p.run()
+    ret = None
     if p.err is None:
-        print(p.scrape(r'\s*(.*)\sEnergy\s*=\s*(.*)'))
+        ret = p.scrape(r'\s*(.*)\sEnergy\s*=\s*(.*)')
+        #print(ret)
     else:
         print("Error running psi4")
+    return ret
 
 def test_run():
-    crds = "\n".join([
-                "O  0.000 0.000 0.000",
-                "H  0.803 0.000 0.596",
-                "H -0.803 0.000 0.596"])
-    run_pcm(crds, charge=0, spin=1, theory='b3lyp', basis="cc-pVDZ")
+    sys = Sys([ Mol(['O', 'H', 'H'], 0, 1) ])
+    crds = [[ 0.000, 0.000, 0.000],
+            [ 0.803, 0.000, 0.596],
+            [-0.803, 0.000, 0.596]]
+    ret = run_pcm(sys, crds, theory='wB97X-D', basis='aug-cc-pvdz')
+    print(ret)
 
 #test_run()

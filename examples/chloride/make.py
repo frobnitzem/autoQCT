@@ -12,6 +12,12 @@ class ChlorideWater(QCT):
         [(0,2,3), water],
         [(1,4,5), water]
     ]
+    theory='wB97X-D'
+    basis='aug-cc-pvdz'
+    def clustered(self, x):
+        return all( dist(x[0], x[j]) < 2.3
+                    for j in [2,3, 5,6]
+                  )
 
 autoQCT(ChlorideWater)
 

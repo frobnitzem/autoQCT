@@ -110,7 +110,9 @@ First, verify that you have the following dependencies installed
 * Linux-like environment with bash
 * python 3 with numpy
 * [CP2K](https://www.cp2k.org)
-* [Gaussian 09 or 16](https://gaussian.com) with ADMP dynamics
+* [Psi4](http://www.psicode.org/)
+  * A method that works well is to use the cmake build process in
+    a python virtualenv.
 
 Second, download and install the project:
 

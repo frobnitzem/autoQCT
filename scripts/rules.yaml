@@ -1,0 +1,66 @@
+ebind:
+    resource: &psi4
+        time: 7
+        nrs: 1
+        cpu: 1
+    inp:
+        crd: frame_{n}.npy
+    out:
+        en: bind_{n}.npy
+    script: |
+        qct.py ebind {inp[crd]} {out[en]}
+
+# Delta G using particle deletion.
+dg_nm1_n:
+    resource: &simple
+        time: 2
+        nrs:  1
+        cpu:  1
+    inp: {}
+    loop:
+        n: "range(0,{frames})"
+        inp:
+            en: bind_{n}.en
+    out:
+        dg: dg_nm1_n.en
+        min: min_nm1.npy
+    script: |
+        qct.py exp_pos bind_%d.en {frames} {out[dg]} {out[min]}
+
+# Single-point solvation FE calc.
+solv:
+    resource:
+        <<: *psi4
+    inp:
+        crd: frame_{n}.npy
+    out:
+        muex: solv_{n}.txt
+    script: |
+        qct.py solv {inp[crd]} {out[en]}
+
+# Delta G using particle insertion
+dg_solv:
+    resource:
+        <<: *simple
+    inp: {}
+    loop:
+        n: "range(0,{frames})"
+        inp:
+            muex: solv_{n}.txt
+    out:
+        solv: dg_solv.txt
+    script: |
+        qct.py exp_neg solv_%d.txt {frames} {out[solv]}
+
+# Rigid Rotor Harmonic Oscillator Free Energy Estimate
+rrho:
+    resource:
+        time: 15
+        nrs: 1
+        cpu: 1
+    inp:
+        min: min_nm1.npy
+    out:
+        thermo: nm1.yaml
+    script: |
+        qct.py rrho {inp[min]} {out[thermo]} 
