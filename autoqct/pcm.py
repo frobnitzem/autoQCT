@@ -1,5 +1,5 @@
-from psi4run import Psi4Run
-from molecule import *
+from .psi4run import Psi4Run
+from .molecule import *
 
 # Input template
 pcm_in = """#! pcm
@@ -26,6 +26,7 @@ pcm = {{
     }}
 
     Cavity {{
+        # how to manually set radii?
         RadiiSet = UFF
         Type = GePol
         Scaling = false

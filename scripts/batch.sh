@@ -1,8 +1,10 @@
 #!/bin/bash
 #SBATCH --nodes=10
-#SBATCH --time=10:00
+#SBATCH --time=45:00
 #SBATCH --job-name=autoQCT
 #SBATCH --output=%j.out
 
-python pmake.py rules.yaml targets.yaml
+export PYTHONPATH=$PYTHONPATH:$HOME/autoQCT
+PMAKE=$HOME/pmake/make.py
+$PMAKE rules.yaml targets.yaml 45
 

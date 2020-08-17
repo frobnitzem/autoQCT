@@ -1,7 +1,7 @@
 from multiprocessing import Process, Pipe
 from tempfile import TemporaryDirectory
 import os
-from molecule import *
+from .molecule import *
 
 # FIXME: read the # of cores and memory from cmd-line args / config somewhere
 # return counterpoise-corrected binding energy in kcal/mol

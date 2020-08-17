@@ -1,5 +1,5 @@
-from psi4run import Psi4Run
-from molecule import *
+from .psi4run import Psi4Run
+from .molecule import *
 
 # Input template
 rrho_in = """#! rrho
@@ -15,6 +15,7 @@ set {{
 
 optimize('{theory}')
 ks_e = frequencies('{theory}', dertype=1)
+# TODO: check positivity of ks_e[6:]
 """
 
 # Example output section:

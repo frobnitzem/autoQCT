@@ -11,10 +11,31 @@
 
 import os, json
 import numpy as np
-from .cp2kfile import *
-from .qm_input import *
 
-__all__ = ['QCT', 'autoQCT']
+from .molecule import *
+from .cp2kfile import read_cp2k
+from .pcm import run_pcm
+from .ebind import run_ebind
+from .rrho import run_rrho
+
+__all__ = ['QCT', 'autoQCT', 'dist']
+
+kT  = 8.3145e-3*298.15 / 4.184
+
+# helper function - calculate pair distance
+def dist(x, y):
+    return np.sqrt( np.sum((x-y)*(x-y)) )
+
+# helper function - read all json files into a list
+def read_json(name_fmt, frames, key=None):
+    en = []
+    for i in range(frames):
+        with open(name_fmt % i) as f:
+            e = json.loads(f.read())
+            if key is not None:
+                e = e[key]
+            en.append( e )
+    return en
 
 class QCT:
     attr = {
@@ -30,6 +51,15 @@ class QCT:
                 raise NameError("Incomplete user code: '%s' is not defined."%k)
         self.system = Sys([m[1] for m in self.molecules])
 
+    # Test the filter by showing the frame 'fr' and its run-result.
+    def test_filter(self, trj_name, fr="0"):
+        trj = read_cp2k(trj_name, self.molecules)
+
+        i = int(fr)
+        print(trj[i].x)
+        print( self.clustered(trj[i].x) )
+
+    # TODO: turn read_cp2k into an iterator
     def init(self, trj_name):
         trj = read_cp2k(trj_name, self.molecules)
 
@@ -38,7 +68,7 @@ class QCT:
             if not self.clustered(trj[i].x):
                 del trj[i]
 
-        print("Filtered out %d frames." % len(trj))
+        print("%d frames pass filter" % len(trj))
 
         targets = """{name}:
     frames: {frames:d}
@@ -46,11 +76,11 @@ class QCT:
         dg: dg_nm1_n.en
         solv: dg_solv.txt
         thermo: nm1.yaml
-""".format(name=self.name, frames=self.frames)
+""".format(name=self.name, frames=len(trj))
         with open("targets.yaml", "w") as f:
             f.write(targets)
         for i,frame in enumerate(trj):
-            np.save("frame_%d.npy", frame.x)
+            np.save("frame_%d.npy"%i, frame.x)
 
     def loop_nm1(self, x):
         # Loop over solvent molecules and make "leave-out-out"
@@ -82,7 +112,7 @@ class QCT:
                      )
 
         with open(out, "w") as f:
-            out.write( json.dumps(de) + '\n' )
+            f.write( json.dumps(de) + '\n' )
 
     def solv(self, xyz, out):
         x = np.load(xyz)
@@ -90,7 +120,7 @@ class QCT:
         assert x.shape == (N,3)
         ret = run_pcm(self.system, x, theory=self.theory, basis=self.basis)
         with open(out, "w") as f:
-            out.write( json.dumps(ret, indent=4) + '\n' )
+            f.write( json.dumps(ret, indent=4) + '\n' )
 
     # run rrho on all nm1 clusters
     def rrho(self, xyz, out):
@@ -114,28 +144,31 @@ class QCT:
                 ans['solvent'][solv_name] = \
                     run_rrho(s2, x2, theory=self.theory, basis=self.basis)
         with open(out, "w") as f:
-            out.write( json.dumps(ans, indent=4) + '\n' )
+            f.write( json.dumps(ans, indent=4) + '\n' )
 
     # en_nm1 and en_n are input filenames
     # dg, minxyz are output filenames
     def exp_pos(self, name_fmt, nfr, dg, minxyz):
         frames = int(nfr)
-        en = []
-        for i in range(frames):
-            with open(name_fmt % i) as f:
-                en.append( json.loads(f.read()) )
-        kT  = 8.3145e-3*298.15 / 4.184
+        en = read_json(name_fmt, frames)
         en  = np.array(en).reshape(-1) / kT
         top = en.max()
         avg = np.sum( np.exp(en - top) / len(en) )
         return kT * (top + np.log(avg))
 
-    # muex_n is the input filename
+    # muex_n is the input filename pattern
+    # nfr is the number of frames (0, 1, 2, ..., nfr-1)
     # out is the output filename
+    # example: exp_neg solv_%d.json {frames} {out[solv]}
     def exp_neg(self, muex_n, nfr, out):
         frames = int(nfr)
+        en = read_json(muex_n, frames, "PCM Polarization")
+        en = np.array(en).reshape(-1)
+        emin = en.min()
+        avg = np.sum(np.exp( -(en - emin)/kT )) / len(en)
+        en = emin - kT*np.log( avg )
         with open(out, "w") as f:
-            out.write("0.0\n")
+            f.write("%f\n"%en)
 
 def autoQCT(Q):
     import sys

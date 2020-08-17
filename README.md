@@ -124,11 +124,41 @@ python3 setup.py install
 
 Third, obtain a CP2K trajectory (`.xyz`) of the
 solute/solvent cluster you are interested in. 
+Put it in an empty directory and call it something like `cp2k_cluster.xyz`.
 
-Fourth, create an input file following the examples in
-the [examples directory][2], and execute it with `python3 my-file.py script`.
-Run the generated jobs and complete the output analysis
-using `python3 my-file.py Kn`.
+Fourth, create a `qct.py` input file following the examples in
+the [examples directory][2].
+Test out your cluster-ness filter by running
+```
+./qct.py test_filter cp2k_cluster.xyz 0
+```
+This will run your `clustered` function on frame 0 and show
+the coordinates and the filter result.  This way you can check
+whether your filter is working as expected.
+
+When you are satisfied with the filter, it's time
+to create the dataset.  Do this by executing:
+```
+./qct.py init cp2k_cluster.xyz
+```
+
+If all goes well, you should now see lots of `frame_nnn.npy` files containing
+coordinates of your cluster.  You should also have a `targets.yaml`
+file listing out QM calculations that need to be run.
+
+Submit those to the batch cluster using as many processors as you
+have available.  To do this, copy both `scripts/batch.sh` and
+and `scripts/targets.yaml` to the current directory.  Adapt
+`scripts/batch.sh` to your use case, and run it.  You should be able
+to check job progress from its log file.  Re-run this until
+it says all jobs are completed.
+
+At this point, you should have all the following output files:
+
+* `dg_nm1_n.en`
+* `dg_solv.txt`
+* `nm1.yaml`
+
 
 Finally, if this work has been useful in creating a published work,
 please acknowledge it by citing [Quasi-chemical theory for anion hydration and specific ion effects: Cl-(aq) vs. F-(aq), Chem. Phys. Lett. X. 4:100037, 2019.][1].

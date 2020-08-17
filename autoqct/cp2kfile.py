@@ -19,7 +19,7 @@ class Frame:
 
     def validate(self):
         assert len(self.x) == self.sys.atoms()
-        assert self.x.shape == 2
+        assert len(self.x.shape) == 2
         assert self.x.shape[1] == 3
 
 def parse_sys(topol, names, crds):
@@ -71,5 +71,11 @@ def read_cp2k(cp2k, topol):
                 if len(tok) < 4: continue
                 names.append(tok[0])
                 crds.append(list(map(float, tok[1:4])))
+
+    if len(dataFrameList) > 0:
+        sys, x = parse_sys(topol, names, crds)
+        dataFrameList[-1].sys = sys
+        dataFrameList[-1].x   = x
+        dataFrameList[-1].validate()
 
     return dataFrameList
