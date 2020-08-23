@@ -72,21 +72,25 @@ class QCT:
 
         targets = """{name}:
     frames: {frames:d}
+    dirname: data
     out:
         dg: dg_nm1_n.en
-        solv: dg_solv.txt
-        thermo: nm1.yaml
+        solv: dg_solv.json
+        thermo: nm1.json
 """.format(name=self.name, frames=len(trj))
         with open("targets.yaml", "w") as f:
             f.write(targets)
+        data = Path("data")
+        data.mkdir(exist_ok=True)
         for i,frame in enumerate(trj):
-            np.save("frame_%d.npy"%i, frame.x)
+            np.save(data / ("frame_%d.npy"%i), frame.x)
 
     def loop_nm1(self, x):
         # Loop over solvent molecules and make "leave-out-out"
         # nm1 = n - 1 size clusters.
         k = self.system[0].atoms()
         de = np.zeros(len(self.system)-1)
+        N = self.system.atoms()
         for j in range(1, len(self.system)):
             n = self.system[j].atoms()
 
@@ -107,9 +111,13 @@ class QCT:
 
         de = []
         for s1, x1, s2, x2 in self.loop_nm1(x):
+            print(x1)
+            print(x2)
             de.append( run_ebind(s1, x1, s2, x2,
                                  theory=self.theory, basis=self.basis)
                      )
+            print(de[-1])
+            print()
 
         with open(out, "w") as f:
             f.write( json.dumps(de) + '\n' )
@@ -129,7 +137,7 @@ class QCT:
         assert x.shape == (N,3)
 
         ans = {}
-        ans['solute'] = run_rrho(Sys( self.system[0] ),
+        ans['solute'] = run_rrho(Sys( [ self.system[0] ] ),
                                  x[:self.system[0].atoms()],
                                  theory=self.theory, basis=self.basis)
         ans['solvent'] = {}
@@ -152,9 +160,14 @@ class QCT:
         frames = int(nfr)
         en = read_json(name_fmt, frames)
         en  = np.array(en).reshape(-1) / kT
+        m = np.argmax(en) # use worst binder -- maybe n-1 is "already good"
         top = en.max()
         avg = np.sum( np.exp(en - top) / len(en) )
-        return kT * (top + np.log(avg))
+        en = kT * (top + np.log(avg))
+        with open(dg, "w") as f:
+            f.write("%f\n"%en)
+        import shutil
+        shutil.copy("frame_%d.npy"%m, minxyz)
 
     # muex_n is the input filename pattern
     # nfr is the number of frames (0, 1, 2, ..., nfr-1)

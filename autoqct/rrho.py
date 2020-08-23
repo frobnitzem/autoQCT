@@ -36,10 +36,13 @@ def run_rrho(sys, crds, theory, basis):
     p = Psi4Run( rrho_in.format(sys=sys.fmt_psi4(crds, False),
                                 theory=theory, basis=basis) )
     p.run()
+
     if p.err is None:
-        print(p.scrape(expr))
+        ret = p.scrape(expr, True)
     else:
         print("Error running psi4")
+        ret = None
+    return ret
 
 def test_run():
     sys = Sys([ Mol(['O', 'H', 'H'], 0, 1) ])

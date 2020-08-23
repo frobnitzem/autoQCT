@@ -26,7 +26,6 @@ pcm = {{
     }}
 
     Cavity {{
-        # how to manually set radii?
         RadiiSet = UFF
         Type = GePol
         Scaling = false
@@ -68,10 +67,11 @@ def run_pcm(sys, crds, theory, basis):
     p.run()
     ret = None
     if p.err is None:
-        ret = p.scrape(r'\s*(.*)\sEnergy\s*=\s*(.*)')
+        ret = p.scrape(r'\s*(.*)\sEnergy\s*=\s*(.*)', True)
         #print(ret)
     else:
-        print("Error running psi4")
+        #print("Error running psi4")
+        raise RuntimeError("Error running psi4")
     return ret
 
 def test_run():

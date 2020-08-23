@@ -1,12 +1,13 @@
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from subprocess import check_output, CalledProcessError, STDOUT
-import re
+import re, os
 
 class Psi4Run:
-    def __init__(self, inp):
+    def __init__(self, inp, base='/dev/shm'):
         self.inp = inp
-        self.tmpdir = TemporaryDirectory()
+        #base = "/qscratch/%s" % os.environ['USER']
+        self.tmpdir = TemporaryDirectory(dir=base)
         self.dirname = Path( self.tmpdir.name )
         self.infile = self.dirname / "input.dat"
         self.err = None
@@ -24,11 +25,13 @@ class Psi4Run:
             #print(self.out)
         except CalledProcessError as e:
             print("Received error code %d"%e.returncode)
-            print(e.output)
+            print(e.output.decode('utf-8'))
             self.err = e.returncode
             self.out = e.output
 
-    def scrape(self, regex):
+    # if True, scale all floats by psi4.constants.hartree2kcalmol
+    def scrape(self, regex, scale=False):
+        hartree2kcalmol = 627.503
         attr = {}
         expr = re.compile(regex)
         fexpr = re.compile(r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?')
@@ -40,6 +43,9 @@ class Psi4Run:
                 v = fexpr.match(m[2])
                 if v is None:
                     continue
-                attr[m[1].strip()] = float(v[0])
+                s = float(v[0])
+                if scale:
+                    s *= hartree2kcalmol
+                attr[m[1].strip()] = s
         return attr
 

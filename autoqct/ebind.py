@@ -8,7 +8,7 @@ from .molecule import *
 def calcE(conn, sys1, crd1, sys2, crd2, theory, basis):
     import psi4
     olddir = os.getcwd()
-    tmpdir = TemporaryDirectory()
+    tmpdir = TemporaryDirectory(dir='/dev/shm')
     os.chdir(tmpdir.name)
     psi4.core.set_output_file('output.dat', False)
     psi4.set_memory('100 GB')
@@ -31,7 +31,7 @@ def run_ebind(sys1, crd1, sys2, crd2, theory, basis):
     p.start()
     de = recv.recv()
     p.join() # this blocks until the process terminates
-    print("Delta E = %g kcal/mol"%de)
+    #print("Delta E = %g kcal/mol"%de)
     return de
 
 def test_run():

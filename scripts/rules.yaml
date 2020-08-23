@@ -8,7 +8,7 @@ ebind:
     out:
         en: bind_{n}.json
     script: |
-        ./qct.py ebind {inp[crd]} {out[en]}
+        {mpirun} ./qct.py ebind {inp[crd]} {out[en]}
 
 # Delta G using particle deletion.
 dg_nm1_n:
@@ -20,12 +20,12 @@ dg_nm1_n:
     loop:
         n: "range(0,{frames})"
         inp:
-            en: bind_{n}.en
+            en: bind_{n}.json
     out:
         dg: dg_nm1_n.en
         min: min_nm1.npy
     script: |
-        ./qct.py exp_pos bind_%d.en {frames} {out[dg]} {out[min]}
+        {mpirun} ./qct.py exp_pos bind_%d.json {frames} {out[dg]} {out[min]}
 
 # Single-point solvation FE calc.
 solv:
@@ -36,7 +36,7 @@ solv:
     out:
         muex: solv_{n}.json
     script: |
-        ./qct.py solv {inp[crd]} {out[en]}
+        {mpirun} ./qct.py solv {inp[crd]} {out[muex]}
 
 # Delta G using particle insertion
 dg_solv:
@@ -50,7 +50,7 @@ dg_solv:
     out:
         solv: dg_solv.json
     script: |
-        ./qct.py exp_neg solv_%d.json {frames} {out[solv]}
+        {mpirun} ./qct.py exp_neg solv_%d.json {frames} {out[solv]}
 
 # Rigid Rotor Harmonic Oscillator Free Energy Estimate
 rrho:
@@ -63,4 +63,4 @@ rrho:
     out:
         thermo: nm1.json
     script: |
-        ./qct.py rrho {inp[min]} {out[thermo]} 
+        {mpirun} ./qct.py rrho {inp[min]} {out[thermo]} 

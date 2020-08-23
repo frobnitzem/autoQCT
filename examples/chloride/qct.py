@@ -9,8 +9,8 @@ chloride = Mol(["Cl"], -1)
 class ChlorideWater(QCT):
     molecules = [
         [(6,), chloride],
-        [(0,2,3), water],
-        [(1,4,5), water]
+        [(0,2,5), water],
+        [(1,3,4), water]
     ]
     theory='wB97X-D'
     basis='aug-cc-pvdz'
