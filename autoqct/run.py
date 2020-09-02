@@ -11,6 +11,7 @@
 
 import os, json
 import numpy as np
+from pathlib import Path
 
 from .molecule import *
 from .cp2kfile import read_cp2k
@@ -111,13 +112,13 @@ class QCT:
 
         de = []
         for s1, x1, s2, x2 in self.loop_nm1(x):
-            print(x1)
-            print(x2)
+            #print(x1)
+            #print(x2)
             de.append( run_ebind(s1, x1, s2, x2,
                                  theory=self.theory, basis=self.basis)
                      )
-            print(de[-1])
-            print()
+            #print(de[-1])
+            #print()
 
         with open(out, "w") as f:
             f.write( json.dumps(de) + '\n' )
