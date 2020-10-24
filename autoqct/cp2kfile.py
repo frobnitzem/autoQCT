@@ -11,30 +11,21 @@ __all__ = ['Frame', 'read_cp2k']
 header = re.compile(r' *i = *([0-9]+), time = *([-0-9.][^,]*), E = *([-0-9.][^ ]*)\n\Z')
 
 class Frame:
-    def __init__(self, index, energy, sys=None, x=None):
+    def __init__(self, index, sys, energy):
         self.index = index
         self.sys = sys
-        self.x   = x
         self.energy = energy
-
-    def validate(self):
-        assert len(self.x) == self.sys.atoms()
-        assert len(self.x.shape) == 2
-        assert self.x.shape[1] == 3
 
 def parse_sys(topol, names, crds):
     s = Sys()
-    y = []
-    for i, (p, m) in enumerate(topol): # permute atoms into molecules
-        assert len(p) == m.atoms(), "Invalid permutation for molecule %d"%(i+1)
-        x = np.empty((len(p), 3), np.float)
+    for (p, m) in topol: # permute atoms into molecules
+        m = m.copy()
+        m.x = np.zeros((len(p), 3), np.float)
         for i,j in enumerate(p):
-            x[i] = crds[j]
-            assert m.names[i] == names[j]
+            m.x[i] = crds[j]
         s.append(m)
-        y.append(x)
 
-    return s, np.vstack(y)
+    return s
 
 def read_cp2k(cp2k, topol):
     # Reading data from an xyz trajectory output by cp2k
@@ -46,36 +37,27 @@ def read_cp2k(cp2k, topol):
     #    HW, HW, OW, O1, O2
     #    
     #  would look like:
-    #    topol = [ ((2,1,0), Mol(["O", "H", "H"], 0, 1)),
-    #              ((3, 4), Mol(["O", "O"], 0, 3)) ]
+    #    topol = [ ((2,1,0), Mol(["O", "H", "H"], np.zeros(3,3), 0, 1)),
+    #              ((3, 4), Mol(["O", "O"], np.zeros((2,3)), 0, 3)) ]
 
     dataFrameList = []
     with open(cp2k) as file_in:
-        for line in file_in:
-            # start new frame
-            m = header.match(line)
-            if m:
-                # process last frame
-                if len(dataFrameList) > 0:
-                    sys, x = parse_sys(topol, names, crds)
-                    dataFrameList[-1].sys = sys
-                    dataFrameList[-1].x   = x
-                    dataFrameList[-1].validate()
-                i = int(m[1])
-                ener = float(m[3])
-                dataFrameList.append(Frame(i, ener))
-                names = []
-                crds = []
-            else:
-                tok = line.strip().split()
-                if len(tok) < 4: continue
-                names.append(tok[0])
-                crds.append(list(map(float, tok[1:4])))
-
-    if len(dataFrameList) > 0:
-        sys, x = parse_sys(topol, names, crds)
-        dataFrameList[-1].sys = sys
-        dataFrameList[-1].x   = x
-        dataFrameList[-1].validate()
+      for line in file_in:
+        # start new frame
+        m = header.match(line)
+        if m:
+            # process last frame
+            if len(dataFrameList) > 0:
+                dataFrameList[-1].sys = parse_sys(topol, names, crds)
+            i = int(m[1])
+            ener = float(m[3])
+            dataFrameList.append(Frame(i, None, ener))
+            names = []
+            crds = []
+        else:
+            tok = line.strip().split()
+            if len(tok) < 4: continue
+            names.append(tok[0])
+            crds.append(list(map(float, tok[1:4])))
 
     return dataFrameList
