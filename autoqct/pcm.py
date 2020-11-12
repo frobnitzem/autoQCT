@@ -1,6 +1,11 @@
 from .psi4run import Psi4Run
 from .molecule import *
 
+# try this later:
+# soscf_max_iter 35
+# basis_guess true
+# damping_percentage 20
+
 # Input template
 pcm_in = """#! pcm
 

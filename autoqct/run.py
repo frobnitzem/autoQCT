@@ -105,6 +105,21 @@ class QCT:
 
             k += n
 
+    def ecluster(self, xyz, out):
+        x = np.load(xyz)
+        N = self.system.atoms()
+        assert x.shape == (N,3)
+
+        k = self.system[0].atoms() # number of atoms in solute
+        x1 = x[:k]
+        x2 = x[k:]
+        s1 = Sys( self.system[:1] )
+        s2 = Sys( self.system[1:] )
+        de = run_ebind(s1, x1, s2, x2, theory=self.theory, basis=self.basis)
+
+        with open(out, "w") as f:
+            f.write( "%g\n"%de )
+
     def ebind(self, xyz, out):
         x = np.load(xyz)
         N = self.system.atoms()
