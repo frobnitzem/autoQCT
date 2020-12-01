@@ -4,6 +4,7 @@
 # autoQCT reads sys.argv in the following formats:
 #
 # python {inp[qct]} ebind {inp[crd]} {out[en]}
+# python {inp[qct]} emin  {inp[crd]} {out[en]}
 # python {inp[qct]} exp_pos nm1_%d.en n_%d.en {frames} {out[dg]} {out[min]}
 # python {inp[qct]} solv {inp[crd]} {out[en]}
 # python {inp[qct]} exp_neg n_%d.muex {frames} {out[solv]}
@@ -11,16 +12,17 @@
 
 import os, json
 import numpy as np
+from pathlib import Path
 
 from .molecule import *
 from .cp2kfile import read_cp2k
 from .pcm import run_pcm
 from .ebind import run_ebind
-from .rrho import run_rrho
+from .rrho import run_rrho, run_emin
 
 __all__ = ['QCT', 'autoQCT', 'dist']
 
-kT  = 8.3145e-3*298.15 / 4.184
+kT  = 8.3145e-3*298.15 / 4.184 # kcal/mol
 
 # helper function - calculate pair distance
 def dist(x, y):
@@ -104,6 +106,21 @@ class QCT:
 
             k += n
 
+    def ecluster(self, xyz, out):
+        x = np.load(xyz)
+        N = self.system.atoms()
+        assert x.shape == (N,3)
+
+        k = self.system[0].atoms() # number of atoms in solute
+        x1 = x[:k]
+        x2 = x[k:]
+        s1 = Sys( self.system[:1] ) # molecule (solute)
+        s2 = Sys( self.system[1:] ) # all other molecules
+        de = run_ebind(s1, x1, s2, x2, theory=self.theory, basis=self.basis)
+
+        with open(out, "w") as f:
+            f.write( "%g\n"%de )
+
     def ebind(self, xyz, out):
         x = np.load(xyz)
         N = self.system.atoms()
@@ -111,13 +128,13 @@ class QCT:
 
         de = []
         for s1, x1, s2, x2 in self.loop_nm1(x):
-            print(x1)
-            print(x2)
+            #print(x1)
+            #print(x2)
             de.append( run_ebind(s1, x1, s2, x2,
                                  theory=self.theory, basis=self.basis)
                      )
-            print(de[-1])
-            print()
+            #print(de[-1])
+            #print()
 
         with open(out, "w") as f:
             f.write( json.dumps(de) + '\n' )
@@ -129,6 +146,17 @@ class QCT:
         ret = run_pcm(self.system, x, theory=self.theory, basis=self.basis)
         with open(out, "w") as f:
             f.write( json.dumps(ret, indent=4) + '\n' )
+
+    # run energy minimization on the system
+    def emin(self, xyz, out):
+        x = np.load(xyz)
+        en = run_emin(self.system, x,
+                      theory=self.theory, basis=self.basis)
+        if en is None:
+            return 1
+        with open(out, "w") as f:
+            f.write("%f\n"%en)
+        return 0
 
     # run rrho on all nm1 clusters
     def rrho(self, xyz, out):
