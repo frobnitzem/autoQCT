@@ -1,14 +1,20 @@
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from pathlib import Path
 from subprocess import check_output, CalledProcessError, STDOUT
 import re, os
 
 class Psi4Run:
-    def __init__(self, inp, base='/dev/shm'):
+    def __init__(self, inp, base='/dev/shm', verb=False):
+        save_out = False #or True
+        self.verb = verb #or True
         self.inp = inp
         #base = "/qscratch/%s" % os.environ['USER']
-        self.tmpdir = TemporaryDirectory(dir=base)
-        self.dirname = Path( self.tmpdir.name )
+        if save_out:
+            self.tmpdir = None
+            self.dirname = Path( mkdtemp(dir=base) )
+        else:
+            self.tmpdir = TemporaryDirectory(dir=base)
+            self.dirname = Path( self.tmpdir.name )
         self.infile = self.dirname / "input.dat"
         self.err = None
 
@@ -22,7 +28,8 @@ class Psi4Run:
             self.out = check_output(["psi4"], #, "-n", "18"],
                          stderr=STDOUT,
                          cwd=str(self.dirname))
-            #print(self.out)
+            if self.verb:
+                print(self.out)
         except CalledProcessError as e:
             print("Received error code %d"%e.returncode)
             print(e.output.decode('utf-8'))
