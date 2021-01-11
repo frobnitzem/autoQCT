@@ -19,6 +19,7 @@ from .cp2kfile import read_cp2k
 from .pcm import run_pcm
 from .ebind import run_ebind
 from .rrho import run_rrho, run_emin
+from .importer import import_py
 
 __all__ = ['QCT', 'autoQCT', 'dist']
 
@@ -83,9 +84,22 @@ class QCT:
         with open("targets.yaml", "w") as f:
             f.write(targets)
         data = Path("data")
-        data.mkdir(exist_ok=True)
+        data.mkdir(exist_ok=False)
+        #data.mkdir(exist_ok=True)
         for i,frame in enumerate(trj):
             np.save(data / ("frame_%d.npy"%i), frame.x)
+
+    def reduce(self, trj_name, fn_path):
+        module = import_py("user_fn", fn_path)
+        trj = read_cp2k(trj_name, self.molecules)
+
+        #for i in range(len(trj)-1, -1, -1):
+        #    if not self.clustered(trj[i].x):
+        #        del trj[i]
+        x = module.x0
+        for i in range(len(trj)):
+            module.fn(self, trj[i].x, x)
+        module.output(trj_name, x)
 
     def loop_nm1(self, x):
         # Loop over solvent molecules and make "leave-out-out"
