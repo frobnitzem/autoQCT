@@ -11,6 +11,8 @@ units angstrom
 
 set {{
   basis {basis}
+  OPT_COORDINATES CARTESIAN
+  geom_maxiter 100
 }}
 
 optimize('{theory}')
@@ -64,24 +66,45 @@ def run_rrho(sys, crds, theory, basis):
         ret = None
     return ret
 
-def run_emin(sys, crds, theory, basis):
+# Also runs single-point energy calculations if optimize==False
+def run_emin(sys, crds, theory, basis, optimize=True):
     expr = r'\s*Final (energy) is\s*(.*)'
-    p = Psi4Run( em_in.format(sys=sys.fmt_psi4(crds, False),
-                              theory=theory, basis=basis) )
+    if optimize:
+        tpl = em_in
+    else:
+        tpl = em_in.replace("optimize", "energy")
+    p = Psi4Run( tpl.format(sys=sys.fmt_psi4(crds, False),
+                            theory=theory, basis=basis) )
     p.run()
 
-    if p.err is None:
-        ret = p.scrape(expr, True)
-    else:
+    if p.err is not None:
         print("Error running psi4")
-        ret = None
+        return None
+
+    if not optimize:
+        expr = '\s*Total (Energy) =\s*(.*)'
+        ret = p.scrape(expr, True)
+        return ret['Energy']
+
+    ret = p.scrape(expr, True)
     return ret['energy']
 
-def test_run():
+def test_run(argv):
     sys = Sys([ Mol(['O', 'H', 'H'], 0, 1) ])
     crds = [[ 0.000, 0.000, 0.000],
             [ 0.803, 0.000, 0.596],
             [-0.803, 0.000, 0.596]]
-    run_rrho(sys, crds, theory='wB97X-D', basis='aug-cc-pvdz')
+    ans = run_rrho(sys, crds, theory=argv[1], basis=argv[2])
+    print("Water:")
+    print(ans)
+    return
 
-#test_run()
+    for ion in ['F', 'Cl', 'Br', 'I']:
+        sys = Sys([ Mol([ion], -1, 1) ])
+        en = run_emin(sys, crds[:1], theory=argv[1], basis=argv[2],
+                      optimize=False)
+        print("%s-: %f"%(ion, en))
+
+if __name__=="__main__":
+    import sys
+    test_run(sys.argv)

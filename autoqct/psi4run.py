@@ -42,8 +42,29 @@ class Psi4Run:
         attr = {}
         expr = re.compile(regex)
         fexpr = re.compile(r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?')
-        with open(self.dirname / "output.dat") as f:
+        state = 0 # read any optimized geometry found
+        opt = []
+        with open(self.dirname / "output.dat", encoding='utf-8') as f:
             for line in f:
+                if state == 0 and 'Final optimized geometry' in line:
+                    opt = []
+                    state = 1
+                elif state == 1 and line.strip()[:8] == 'Geometry':
+                    state = 2 # then keyword
+                elif state == 2 and line.strip() == '':
+                    state = 3 # then blank line
+                elif state == 3:
+                    if line.strip() == '':
+                        state = 0
+                        continue
+                    tok = line.split()
+                    if len(tok) != 4:
+                        print("Syntax error reading optimized geom!")
+                        opt = []
+                        state = 0
+                        continue
+                    opt.append([tok[0], [float(t) for t in tok[1:]]])
+
                 m = expr.match(line)
                 if m is None:
                     continue
@@ -54,5 +75,6 @@ class Psi4Run:
                 if scale:
                     s *= hartree2kcalmol
                 attr[m[1].strip()] = s
+            if len(opt) > 0:
+                attr['optimized geometry'] = opt
         return attr
-
