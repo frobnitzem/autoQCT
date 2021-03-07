@@ -23,22 +23,27 @@ from .importer import import_py
 
 __all__ = ['QCT', 'autoQCT', 'dist']
 
-kT  = 8.3145e-3*298.15 / 4.184 # kcal/mol
+RT  = 8.3145e-3*298.15 / 4.184 # kcal/mol
 
 # helper function - calculate pair distance
 def dist(x, y):
     return np.sqrt( np.sum((x-y)*(x-y)) )
 
 # helper function - read all json files into a list
-def read_json(name_fmt, frames, key=None):
-    en = []
+def read_json(name_fmt, frames):
+    ans = None
     for i in range(frames):
-        with open(name_fmt % i) as f:
-            e = json.loads(f.read())
-            if key is not None:
-                e = e[key]
-            en.append( e )
-    return en
+        try:
+            with open(name_fmt % i, encoding='utf8') as f:
+                e = json.load(f)
+                if ans is None:
+                    ans = dict((k,[v]) for k,v in e.items())
+                    continue
+                for k,v in e.items():
+                    ans[k].append(v)
+        except IOError:
+            continue
+    return ans
 
 class QCT:
     attr = {
@@ -276,23 +281,40 @@ class QCT:
             assert i >= 0 and i < len(self.system)
             ans.append(
                 run_rrho(Sys( [self.system[i]] ),
-                         x[start:start+k]
+                         x[start:start+k],
                          theory=self.theory, basis=self.basis)
                 )
         with open(out, "w") as f:
             f.write( json.dumps(ans, indent=4) + '\n' )
 
-    # en_nm1 and en_n are input filenames
+    # rrho is the output of rrho
+    # name_fmt % i are the input dE files (i=0,...,nfr-1)
+    # nfr is the number of frames
     # dg is an output filename
-    def exp_pos(self, name_fmt, nfr, dg):
+    def exp_pos(self, rrho, name_fmt, nfr, dg):
         frames = int(nfr)
         en = read_json(name_fmt, frames)
-        en  = np.array(en).reshape(-1) / kT
+        # {"Xn": -4.0, "Xnm1": [-3.0, -3.0, -3.0], "X1": [-3.3, -3.3, -3.3]}
+
+        with open(rrho, encoding='utf8') as f:
+            e = json.load(f)
+            X0 = e[0]['E']
+        en = X0 + np.array(en["Xn"])[:,None] \
+                - np.array(en["Xnm1"]) \
+                - np.array(en["X1"])
+        en = en.reshape(-1)
+        h, bins = np.histogram(en, bins=100)
+
+        en /= RT
         top = en.max()
         avg = np.sum( np.exp(en - top) / len(en) )
-        en = kT * (top + np.log(avg))
+        en = RT * (top + np.log(avg))
         with open(dg, "w") as f:
-            f.write("%f\n"%en)
+            f.write("# RT ln <exp(E/RT)> = %f\n"%en)
+            f.write("# E  n(E)\n")
+            bins += 0.5*(bins[1]-bins[0])
+            for x,n in zip(bins[:-1], h):
+                f.write("%f %d\n"%(x,n))
 
     # muex_n is the input filename pattern
     # nfr is the number of frames (0, 1, 2, ..., nfr-1)
@@ -300,13 +322,18 @@ class QCT:
     # example: exp_neg solv_%d.json {frames} {out[solv]}
     def exp_neg(self, muex_n, nfr, out):
         frames = int(nfr)
-        en = read_json(muex_n, frames, "PCM Polarization")
-        en = np.array(en).reshape(-1)
+        en = read_json(muex_n, frames)["PCM Polarization"]
+        en = np.array(en)
+        h, bins = np.histogram(en, bins=100)
         emin = en.min()
-        avg = np.sum(np.exp( -(en - emin)/kT )) / len(en)
-        en = emin - kT*np.log( avg )
+        avg = np.sum(np.exp( -(en - emin)/RT )) / len(en)
+        en = emin - RT*np.log( avg )
         with open(out, "w") as f:
-            f.write("%f\n"%en)
+            f.write("# -RT ln <exp(-E/RT)> = %f\n"%en)
+            f.write("# E  n(E)\n")
+            bins += 0.5*(bins[1]-bins[0])
+            for x,n in zip(bins[:-1], h):
+                f.write("%f %d\n"%(x,n))
 
 def autoQCT(Q):
     import sys
